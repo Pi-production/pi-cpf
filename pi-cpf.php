@@ -11,44 +11,54 @@ License: GPL2
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
+// -----------------------
+// Plugin Update Checker
+// -----------------------
 $update_checker_path = plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
 
 if (file_exists($update_checker_path)) {
     require_once $update_checker_path;
 
     if (class_exists('\YahnisElsts\PluginUpdateChecker\v5p6\PucFactory')) {
-        $updateChecker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
-            'https://github.com/Pi-production/pi-cpf', // GitHub repo
+        // Instantiate PUC
+        global $pi_cpf_update_checker;
+        $pi_cpf_update_checker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
+            'https://github.com/Pi-production/pi-cpf', // GitHub repo URL
             __FILE__,
             'pi-cpf' // Plugin slug
         );
 
-        // Optional: use branch
-        $updateChecker->setBranch('main');
+        // Optional: use main branch for development updates
+        $pi_cpf_update_checker->setBranch('main');
 
-        error_log('PUC loaded successfully');
+        // Force update check immediately
+        $pi_cpf_update_checker->checkForUpdates();
+        error_log('PUC forced to check updates.');
 
-        // DEBUG: log installed and remote version
-        add_action('admin_init', function() use ($updateChecker) {
-            $installed_version = $updateChecker->getInstalledVersion();
+        // Debug: log installed version, latest GitHub tag, and comparison
+        add_action('admin_init', function() {
+            global $pi_cpf_update_checker;
+
+            if (!$pi_cpf_update_checker) return;
+
+            // Installed version
+            $installed_version = $pi_cpf_update_checker->getInstalledVersion();
             error_log('PUC installed version: ' . $installed_version);
-        
-            // Fetch GitHub tags directly
+
+            // Fetch GitHub tags
             $tags_response = wp_remote_get('https://api.github.com/repos/Pi-production/pi-cpf/tags');
             if (is_wp_error($tags_response)) {
                 error_log('GitHub tags fetch error: ' . $tags_response->get_error_message());
                 return;
             }
-        
+
             $tags_body = wp_remote_retrieve_body($tags_response);
             $tags = json_decode($tags_body, true);
-        
             if (!$tags || !is_array($tags)) {
                 error_log('No tags found or invalid response.');
                 return;
             }
-        
-            // Find the "latest" tag by version_compare
+
             $latest_tag = null;
             foreach ($tags as $tag) {
                 $tag_name = $tag['name'];
@@ -57,9 +67,9 @@ if (file_exists($update_checker_path)) {
                     $latest_tag = $tag_name;
                 }
             }
-        
+
             error_log('GitHub latest tag: ' . $latest_tag);
-        
+
             // Compare installed vs latest
             $comparison = version_compare($latest_tag, $installed_version);
             if ($comparison === 1) {
@@ -69,8 +79,7 @@ if (file_exists($update_checker_path)) {
             } else {
                 error_log("Installed version is newer than GitHub latest?! Installed {$installed_version} > GitHub latest {$latest_tag}");
             }
-        
-            // Optional: log the entire tags array for reference
+
             error_log('Full tags array: ' . print_r($tags, true));
         });
 
