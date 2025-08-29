@@ -30,20 +30,24 @@ if (file_exists($update_checker_path)) {
 
         // DEBUG: log installed and remote version
         add_action('admin_init', function() use ($updateChecker) {
-            // Installed plugin version
-            $installed_version = $updateChecker->getInstalledVersion();
-            error_log('PUC installed version: ' . $installed_version);
+            // Clear the update transient
+            delete_site_transient('update_plugins');
+            error_log('Transient cleared');
         
-            // Access PUC transient directly to see what it fetched from GitHub
+            // Force PUC to check GitHub immediately
+            $updateChecker->checkForUpdates();
+            error_log('PUC forced to check updates');
+        
+            // Inspect what PUC just stored
             $transient = get_site_transient('update_plugins');
             if ($transient && isset($transient->response[plugin_basename(__FILE__)])) {
                 $response = $transient->response[plugin_basename(__FILE__)];
-                error_log('PUC transient response for this plugin: ' . print_r($response, true));
+                error_log('PUC forced transient response: ' . print_r($response, true));
                 if (isset($response->new_version)) {
                     error_log('PUC sees new_version: ' . $response->new_version);
                 }
             } else {
-                error_log('PUC transient not found or empty.');
+                error_log('PUC transient still empty after forced check');
             }
         });
 
