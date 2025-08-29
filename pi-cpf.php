@@ -15,7 +15,7 @@ use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 $myUpdateChecker = PucFactory::buildUpdateChecker(
 	'https://github.com/Pi-production/pi-cpf',
 	__FILE__,
-	'pi-cpf'
+	'pi-cpf-main'
 );
 
 //Set the branch that contains the stable release.
