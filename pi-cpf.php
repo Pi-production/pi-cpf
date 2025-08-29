@@ -3,7 +3,7 @@
 Plugin Name: Pi CPF
 Plugin URI: https://github.com/Pi-production/pi-cpf
 Description: An all-in-one builder by PubInteractive.
-Version: 1.0.3-dev
+Version: 1.0.2
 Author: PubInteractive
 Author URI: https://pubinteractive.ca
 License: GPL2
@@ -34,6 +34,8 @@ if (file_exists($update_checker_path)) {
 } else {
     error_log('PUC NOT loaded!');
 }
+
+$updateChecker->getVcsApi()->setDebug(true);
 
 // -----------------------
 // Include meta-box.php
