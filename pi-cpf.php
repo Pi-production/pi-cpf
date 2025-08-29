@@ -29,15 +29,13 @@ if (file_exists($update_checker_path)) {
         $updateChecker->setBranch('main'); // Optional: specific branch
         error_log('PUC loaded successfully');
 
-        add_action('init', function() use ($updateChecker) {
-            // Force WordPress to fetch fresh update info
+        // -----------------------
+        // DEBUG: Force WP to check updates
+        // -----------------------
+        add_action('init', function() {
+            // Force WP to fetch fresh plugin update info
             delete_site_transient('update_plugins');
-        
-            // Log the raw update request URL
-            $api_url = $updateChecker->getVcsApi()->getRepoApiUrl();
-            error_log('PUC GitHub API URL: ' . $api_url);
-        
-            // Note: do NOT call getLatestVersion() — it doesn’t exist in v5.6
+            error_log('Transient for plugin updates cleared.');
         });
     } else {
         error_log('PUC loaded but class not found!');
