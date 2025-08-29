@@ -12,7 +12,7 @@ function create_cookie_meta_box () {
     if ( 'page-template-pi.php' == get_post_meta( get_the_ID(), '_wp_page_template', true ) ||  'page-accueil.php' == get_post_meta( get_the_ID(), '_wp_page_template', true ) ||  'page-realisations.php' == get_post_meta( get_the_ID(), '_wp_page_template', true ) ||  'page-service.php' == get_post_meta( get_the_ID(), '_wp_page_template', true )) {
         add_meta_box(
         'pi_meta_box', // Unique ID
-        'Pi Builder', // Box title
+        'Pi builder', // Box title
         'pi_custom_box',
         'page',
         'normal',
