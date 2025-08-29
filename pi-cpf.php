@@ -44,6 +44,25 @@ if (file_exists($update_checker_path)) {
     error_log('PUC NOT loaded!');
 }
 
+add_action('admin_init', function() {
+    $url = 'https://api.github.com/repos/Pi-production/pi-cpf/branches/main';
+
+    $response = wp_remote_get($url, [
+        'headers' => [
+            'User-Agent' => 'WordPress'
+        ]
+    ]);
+
+    if (is_wp_error($response)) {
+        error_log('GitHub connection test failed: ' . $response->get_error_message());
+    } else {
+        $code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        error_log('GitHub connection test HTTP code: ' . $code);
+        error_log('GitHub connection test body snippet: ' . substr($body, 0, 200));
+    }
+});
+
 // -----------------------
 // Include meta-box.php
 // -----------------------
