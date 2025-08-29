@@ -35,6 +35,25 @@ if (file_exists($update_checker_path)) {
         $pi_cpf_update_checker->checkForUpdates();
         error_log('PUC forced to check updates.');
 
+        // Force WordPress to recognize the update
+        delete_site_transient('update_plugins');
+        $transient = get_site_transient('update_plugins');
+        if (!isset($transient->response)) {
+            $transient->response = [];
+        }
+
+        // Add the plugin to the response array so WP shows an update is available
+        $plugin_file = plugin_basename(__FILE__);
+        $transient->response[$plugin_file] = (object) [
+            'slug'        => 'pi-cpf',
+            'new_version' => $pi_cpf_update_checker->getLatestVersion(),
+            'url'         => 'https://github.com/Pi-production/pi-cpf',
+            'package'     => $pi_cpf_update_checker->getPackageUrl()
+        ];
+
+        set_site_transient('update_plugins', $transient);
+        error_log('PUC transient manually updated for WordPress update UI.');
+
         // Debug: log installed version, latest GitHub tag, and comparison
         add_action('admin_init', function() {
             global $pi_cpf_update_checker;
