@@ -29,28 +29,22 @@ if (file_exists($update_checker_path)) {
         error_log('PUC loaded successfully');
 
         // DEBUG: log installed and remote version
-        add_action('admin_init', function() {
-            $repo_owner = 'Pi-production';
-            $repo_name  = 'pi-cpf';
-            $api_url    = "https://api.github.com/repos/$repo_owner/$repo_name/tags";
+        add_action('admin_init', function() use ($updateChecker) {
+            // Installed plugin version
+            $installed_version = $updateChecker->getInstalledVersion();
+            error_log('PUC installed version: ' . $installed_version);
         
-            $response = wp_remote_get($api_url, [
-                'headers' => [
-                    'User-Agent' => 'WordPress-PUC-Debug' // GitHub requires a user agent
-                ],
-                'timeout' => 15,
-            ]);
-        
-            if (is_wp_error($response)) {
-                error_log('GitHub connection test failed: ' . $response->get_error_message());
-                return;
+            // Access PUC transient directly to see what it fetched from GitHub
+            $transient = get_site_transient('update_plugins');
+            if ($transient && isset($transient->response[plugin_basename(__FILE__)])) {
+                $response = $transient->response[plugin_basename(__FILE__)];
+                error_log('PUC transient response for this plugin: ' . print_r($response, true));
+                if (isset($response->new_version)) {
+                    error_log('PUC sees new_version: ' . $response->new_version);
+                }
+            } else {
+                error_log('PUC transient not found or empty.');
             }
-        
-            $code = wp_remote_retrieve_response_code($response);
-            $body = wp_remote_retrieve_body($response);
-        
-            error_log('GitHub connection test HTTP code: ' . $code);
-            error_log('GitHub tags response snippet: ' . substr($body, 0, 300));
         });
 
     } else {
