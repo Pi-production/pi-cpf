@@ -24,7 +24,7 @@ if (file_exists($update_checker_path)) {
         );
 
         // Optional: use branch
-        // $updateChecker->setBranch('main');
+        $updateChecker->setBranch('main');
 
         error_log('PUC loaded successfully');
 
