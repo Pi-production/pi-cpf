@@ -16,33 +16,21 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 // -----------------------
 $update_checker_path = plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
 
-if (file_exists($update_checker_path)) {
-    require $update_checker_path;
+if ( isset( $updateChecker ) ) {
+    add_action('init', function() use ($updateChecker) {
+        // Get the currently installed version (from plugin header)
+        $installed_version = $updateChecker->getInstalledVersion();
+        error_log('PUC installed version: ' . $installed_version);
 
-    if (class_exists('\YahnisElsts\PluginUpdateChecker\v5p6\PucFactory')) {
-        $updateChecker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
-            'https://github.com/Pi-production/pi-cpf', // no trailing slash
-            __FILE__,
-            'pi-cpf'
-        );
-        $updateChecker->setBranch('main'); // Optional: specific branch
-        error_log('PUC loaded successfully');
-
-        // -----------------------
-        // Debugging snippet
-        // -----------------------
-        add_action('init', function() use ($updateChecker) {
-            $latest = $updateChecker->getVcsApi()->getLatestVersion();
-            error_log('PUC detected latest GitHub version: ' . print_r($latest, true));
-
-            $installed = $updateChecker->getInstalledVersion();
-            error_log('PUC installed version: ' . $installed);
-        });
-    } else {
-        error_log('PUC loaded but class not found!');
-    }
-} else {
-    error_log('PUC NOT loaded!');
+        // Get the latest remote version PUC detects (safe method)
+        $remote_info = $updateChecker->getVcsApi()->getRemoteInfo(); // returns array
+        if (is_array($remote_info)) {
+            $latest_version = isset($remote_info['version']) ? $remote_info['version'] : '(unknown)';
+            error_log('PUC detected latest remote version: ' . $latest_version);
+        } else {
+            error_log('PUC could not fetch remote info, returned: ' . print_r($remote_info, true));
+        }
+    });
 }
 
 
