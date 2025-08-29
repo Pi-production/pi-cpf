@@ -52,23 +52,26 @@ if (file_exists($update_checker_path)) {
 
             $tags_body = wp_remote_retrieve_body($tags_response);
             $tags = json_decode($tags_body, true);
-            if (!is_array($tags) || empty($tags)) {
-                error_log('No tags found or invalid response.');
-                return;
+
+            if (!is_array($tags)) {
+                error_log('Invalid tags response: ' . $tags_body);
+                $tags = []; // prevent fatal error
             }
 
-            // Find latest tag
+            // Find the latest tag
             $latest_tag = null;
             $latest_package = '';
             foreach ($tags as $tag) {
-                $tag_name = $tag['name'];
+                if (!is_array($tag)) continue; // skip invalid items
+                $tag_name = $tag['name'] ?? '';
+                if (!$tag_name) continue;
+
+                error_log("GitHub tag found: {$tag_name}");
                 if (!$latest_tag || version_compare($tag_name, $latest_tag, '>')) {
                     $latest_tag = $tag_name;
-                    $latest_package = $tag['zipball_url'];
+                    $latest_package = $tag['zipball_url'] ?? '';
                 }
-                error_log("GitHub tag found: {$tag_name}");
             }
-            error_log('GitHub latest tag: ' . $latest_tag);
 
             // Compare installed vs latest
             if (version_compare($latest_tag, $installed_version, '>')) {
