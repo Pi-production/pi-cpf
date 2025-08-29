@@ -1,10 +1,24 @@
 <?php
-/**
- * Plugin Name: PI Custom Post Fields
- * Description: Centralized PI-CFP functionality for custom posts.
- * Version: 1.0
- * Author: Your Name
- */
+/*
+Plugin Name: Pi CPF
+Plugin URI: https://github.com/Pi-production/pi-cpf
+Description: A all-in-one builder by PubInteractive.
+Version: 1.0.0
+Author: PubInteractive
+Author URI: https://pubinteractive.ca
+License: GPL2
+*/
+
+require plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
+
+$updateChecker = Puc_v4_Factory::buildUpdateChecker(
+    'https://github.com/Pi-production/pi-cpf/', // Your repo URL
+    __FILE__,                                   // Path to this plugin file
+    'pi-cpf'                                    // Plugin slug (folder name)
+);
+
+// Optional: use a specific branch
+$updateChecker->setBranch('main');
 
 if (!defined('ABSPATH')) exit;
 
