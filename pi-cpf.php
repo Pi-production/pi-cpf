@@ -45,22 +45,46 @@ if (file_exists($update_checker_path)) {
 }
 
 add_action('admin_init', function() {
-    $url = 'https://api.github.com/repos/Pi-production/pi-cpf/branches/main';
+    // Path to the plugin update checker file
+    $update_checker_path = plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
 
-    $response = wp_remote_get($url, [
-        'headers' => [
-            'User-Agent' => 'WordPress'
-        ]
-    ]);
-
-    if (is_wp_error($response)) {
-        error_log('GitHub connection test failed: ' . $response->get_error_message());
-    } else {
-        $code = wp_remote_retrieve_response_code($response);
-        $body = wp_remote_retrieve_body($response);
-        error_log('GitHub connection test HTTP code: ' . $code);
-        error_log('GitHub connection test body snippet: ' . substr($body, 0, 200));
+    if (!file_exists($update_checker_path)) {
+        error_log('PUC file not found!');
+        return;
     }
+
+    require_once $update_checker_path;
+
+    if (!class_exists('\YahnisElsts\PluginUpdateChecker\v5p6\PucFactory')) {
+        error_log('PUC class not found!');
+        return;
+    }
+
+    $updateChecker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
+        'https://github.com/Pi-production/pi-cpf', // GitHub repo
+        __FILE__,
+        'pi-cpf'
+    );
+
+    // OPTIONAL: comment out branch to test tag updates
+    // $updateChecker->setBranch('main');
+
+    // Force WP to fetch fresh update info
+    delete_site_transient('update_plugins');
+
+    // Try to fetch the “latest” tag info from GitHub safely
+    $remote_info = $updateChecker->getUpdateData(); // returns array or null
+    if ($remote_info) {
+        error_log('PUC remote info array: ' . print_r($remote_info, true));
+        $latest_version = isset($remote_info['version']) ? $remote_info['version'] : '(unknown)';
+        error_log('PUC sees latest version: ' . $latest_version);
+    } else {
+        error_log('PUC could not fetch remote info. Likely no valid tag detected.');
+    }
+
+    // Installed version (from plugin header)
+    $installed_version = $updateChecker->getInstalledVersion();
+    error_log('PUC installed version: ' . $installed_version);
 });
 
 // -----------------------
