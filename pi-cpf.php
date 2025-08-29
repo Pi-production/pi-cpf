@@ -35,24 +35,34 @@ if (file_exists($update_checker_path)) {
         $pi_cpf_update_checker->checkForUpdates();
         error_log('PUC forced to check updates.');
 
-        // Force WordPress to recognize the update
-        delete_site_transient('update_plugins');
-        $transient = get_site_transient('update_plugins');
-        if (!isset($transient->response)) {
-            $transient->response = [];
-        }
+        // Find the latest tag manually
+$latest_tag = null;
+foreach ($tags as $tag) {
+    $tag_name = $tag['name'];
+    if (!$latest_tag || version_compare($tag_name, $latest_tag, '>')) {
+        $latest_tag = $tag_name;
+        $latest_package = $tag['zipball_url']; // the ZIP file for PUC to install
+    }
+}
 
-        // Add the plugin to the response array so WP shows an update is available
-        $plugin_file = plugin_basename(__FILE__);
-        $transient->response[$plugin_file] = (object) [
-            'slug'        => 'pi-cpf',
-            'new_version' => $pi_cpf_update_checker->getLatestVersion(),
-            'url'         => 'https://github.com/Pi-production/pi-cpf',
-            'package'     => $pi_cpf_update_checker->getPackageUrl()
-        ];
+// Force WordPress to recognize the update
+delete_site_transient('update_plugins');
+$transient = get_site_transient('update_plugins');
+if (!isset($transient->response)) {
+    $transient->response = [];
+}
 
-        set_site_transient('update_plugins', $transient);
-        error_log('PUC transient manually updated for WordPress update UI.');
+// Add plugin to update response
+$plugin_file = plugin_basename(__FILE__);
+$transient->response[$plugin_file] = (object) [
+    'slug'        => 'pi-cpf',
+    'new_version' => $latest_tag,
+    'url'         => 'https://github.com/Pi-production/pi-cpf',
+    'package'     => $latest_package,
+];
+
+set_site_transient('update_plugins', $transient);
+error_log("PUC transient manually updated: {$latest_tag}");
 
         // Debug: log installed version, latest GitHub tag, and comparison
         add_action('admin_init', function() {
