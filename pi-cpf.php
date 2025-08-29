@@ -11,81 +11,48 @@ License: GPL2
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-// -----------------------
-// Load Plugin Update Checker safely
-// -----------------------
 $update_checker_path = plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
 
 if (file_exists($update_checker_path)) {
-    require $update_checker_path;
+    require_once $update_checker_path;
 
     if (class_exists('\YahnisElsts\PluginUpdateChecker\v5p6\PucFactory')) {
         $updateChecker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
-            'https://github.com/Pi-production/pi-cpf', // GitHub repo URL (no trailing slash)
+            'https://github.com/Pi-production/pi-cpf', // GitHub repo
             __FILE__,
-            'pi-cpf'
+            'pi-cpf' // Plugin slug
         );
 
-        // $updateChecker->setBranch('main'); // Optional: specific branch
+        // Optional: use branch
+        // $updateChecker->setBranch('main');
+
         error_log('PUC loaded successfully');
 
-        // -----------------------
-        // DEBUG: Force WP to check updates
-        // -----------------------
-        add_action('init', function() {
+        // DEBUG: log installed and remote version
+        add_action('admin_init', function() use ($updateChecker) {
             // Force WP to fetch fresh plugin update info
             delete_site_transient('update_plugins');
             error_log('Transient for plugin updates cleared.');
+
+            $installed_version = $updateChecker->getInstalledVersion();
+            error_log('PUC installed version: ' . $installed_version);
+
+            $remote_info = $updateChecker->getUpdateData(); // returns array or null
+            if ($remote_info) {
+                error_log('PUC remote info array: ' . print_r($remote_info, true));
+                $latest_version = isset($remote_info['version']) ? $remote_info['version'] : '(unknown)';
+                error_log('PUC sees latest version: ' . $latest_version);
+            } else {
+                error_log('PUC could not fetch remote info. Likely no valid tag detected.');
+            }
         });
+
     } else {
-        error_log('PUC loaded but class not found!');
+        error_log('PUC class not found!');
     }
 } else {
     error_log('PUC NOT loaded!');
 }
-
-add_action('admin_init', function() {
-    // Path to the plugin update checker file
-    $update_checker_path = plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
-
-    if (!file_exists($update_checker_path)) {
-        error_log('PUC file not found!');
-        return;
-    }
-
-    require_once $update_checker_path;
-
-    if (!class_exists('\YahnisElsts\PluginUpdateChecker\v5p6\PucFactory')) {
-        error_log('PUC class not found!');
-        return;
-    }
-
-    $updateChecker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
-        'https://github.com/Pi-production/pi-cpf', // GitHub repo
-        __FILE__,
-        'pi-cpf'
-    );
-
-    // OPTIONAL: comment out branch to test tag updates
-    // $updateChecker->setBranch('main');
-
-    // Force WP to fetch fresh update info
-    delete_site_transient('update_plugins');
-
-    // Try to fetch the “latest” tag info from GitHub safely
-    $remote_info = $updateChecker->getUpdateData(); // returns array or null
-    if ($remote_info) {
-        error_log('PUC remote info array: ' . print_r($remote_info, true));
-        $latest_version = isset($remote_info['version']) ? $remote_info['version'] : '(unknown)';
-        error_log('PUC sees latest version: ' . $latest_version);
-    } else {
-        error_log('PUC could not fetch remote info. Likely no valid tag detected.');
-    }
-
-    // Installed version (from plugin header)
-    $installed_version = $updateChecker->getInstalledVersion();
-    error_log('PUC installed version: ' . $installed_version);
-});
 
 // -----------------------
 // Include meta-box.php
