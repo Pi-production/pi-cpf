@@ -19,7 +19,6 @@ $update_checker_path = plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin
 if (file_exists($update_checker_path)) {
     require $update_checker_path;
 
-    // Use fully qualified class name to avoid 'use' inside if block
     if (class_exists('\YahnisElsts\PluginUpdateChecker\v5p6\PucFactory')) {
         $updateChecker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
             'https://github.com/Pi-production/pi-cpf', // no trailing slash
@@ -28,6 +27,17 @@ if (file_exists($update_checker_path)) {
         );
         $updateChecker->setBranch('main'); // Optional: specific branch
         error_log('PUC loaded successfully');
+
+        // -----------------------
+        // Debugging snippet
+        // -----------------------
+        add_action('init', function() use ($updateChecker) {
+            $latest = $updateChecker->getVcsApi()->getLatestVersion();
+            error_log('PUC detected latest GitHub version: ' . print_r($latest, true));
+
+            $installed = $updateChecker->getInstalledVersion();
+            error_log('PUC installed version: ' . $installed);
+        });
     } else {
         error_log('PUC loaded but class not found!');
     }
@@ -35,7 +45,6 @@ if (file_exists($update_checker_path)) {
     error_log('PUC NOT loaded!');
 }
 
-$updateChecker->getVcsApi()->setDebug(true);
 
 // -----------------------
 // Include meta-box.php
