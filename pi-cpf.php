@@ -26,7 +26,7 @@ if (file_exists($update_checker_path)) {
             'pi-cpf'
         );
 
-        $updateChecker->setBranch('main'); // Optional: specific branch
+        // $updateChecker->setBranch('main'); // Optional: specific branch
         error_log('PUC loaded successfully');
 
         // -----------------------
