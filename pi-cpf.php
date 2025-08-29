@@ -30,25 +30,48 @@ if (file_exists($update_checker_path)) {
 
         // DEBUG: log installed and remote version
         add_action('admin_init', function() use ($updateChecker) {
-            // Clear the update transient
-            delete_site_transient('update_plugins');
-            error_log('Transient cleared');
+            $installed_version = $updateChecker->getInstalledVersion();
+            error_log('PUC installed version: ' . $installed_version);
         
-            // Force PUC to check GitHub immediately
-            $updateChecker->checkForUpdates();
-            error_log('PUC forced to check updates');
-        
-            // Inspect what PUC just stored
-            $transient = get_site_transient('update_plugins');
-            if ($transient && isset($transient->response[plugin_basename(__FILE__)])) {
-                $response = $transient->response[plugin_basename(__FILE__)];
-                error_log('PUC forced transient response: ' . print_r($response, true));
-                if (isset($response->new_version)) {
-                    error_log('PUC sees new_version: ' . $response->new_version);
-                }
-            } else {
-                error_log('PUC transient still empty after forced check');
+            // Fetch GitHub tags directly
+            $tags_response = wp_remote_get('https://api.github.com/repos/Pi-production/pi-cpf/tags');
+            if (is_wp_error($tags_response)) {
+                error_log('GitHub tags fetch error: ' . $tags_response->get_error_message());
+                return;
             }
+        
+            $tags_body = wp_remote_retrieve_body($tags_response);
+            $tags = json_decode($tags_body, true);
+        
+            if (!$tags || !is_array($tags)) {
+                error_log('No tags found or invalid response.');
+                return;
+            }
+        
+            // Find the "latest" tag by version_compare
+            $latest_tag = null;
+            foreach ($tags as $tag) {
+                $tag_name = $tag['name'];
+                error_log("GitHub tag found: {$tag_name}");
+                if (!$latest_tag || version_compare($tag_name, $latest_tag, '>')) {
+                    $latest_tag = $tag_name;
+                }
+            }
+        
+            error_log('GitHub latest tag: ' . $latest_tag);
+        
+            // Compare installed vs latest
+            $comparison = version_compare($latest_tag, $installed_version);
+            if ($comparison === 1) {
+                error_log("Update available! Installed {$installed_version} < GitHub latest {$latest_tag}");
+            } elseif ($comparison === 0) {
+                error_log("Plugin is up to date. Installed {$installed_version} == GitHub latest {$latest_tag}");
+            } else {
+                error_log("Installed version is newer than GitHub latest?! Installed {$installed_version} > GitHub latest {$latest_tag}");
+            }
+        
+            // Optional: log the entire tags array for reference
+            error_log('Full tags array: ' . print_r($tags, true));
         });
 
     } else {
