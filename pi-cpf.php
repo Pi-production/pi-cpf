@@ -3,7 +3,7 @@
 Plugin Name: Pi CPF
 Plugin URI: https://github.com/Pi-production/pi-cpf
 Description: An all-in-one builder by PubInteractive.
-Version: 1.0.0
+Version: 1.0.1
 Author: PubInteractive
 Author URI: https://pubinteractive.ca
 License: GPL2
