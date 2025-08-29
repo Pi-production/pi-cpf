@@ -2,29 +2,47 @@
 /*
 Plugin Name: Pi CPF
 Plugin URI: https://github.com/Pi-production/pi-cpf
-Description: A all-in-one builder by PubInteractive.
+Description: An all-in-one builder by PubInteractive.
 Version: 1.0.0
 Author: PubInteractive
 Author URI: https://pubinteractive.ca
 License: GPL2
 */
 
-require plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
+if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-$updateChecker = Puc_v4_Factory::buildUpdateChecker(
-    'https://github.com/Pi-production/pi-cpf/', // Your repo URL
-    __FILE__,                                   // Path to this plugin file
-    'pi-cpf'                                    // Plugin slug (folder name)
-);
+// -----------------------
+// Load Plugin Update Checker safely
+// -----------------------
+$update_checker_path = plugin_dir_path(__FILE__) . 'plugin-update-checker/plugin-update-checker.php';
 
-// Optional: use a specific branch
-$updateChecker->setBranch('main');
+if (file_exists($update_checker_path)) {
+    require $update_checker_path;
 
-if (!defined('ABSPATH')) exit;
+    // Use fully qualified class name to avoid 'use' inside if block
+    if (class_exists('\YahnisElsts\PluginUpdateChecker\v5p6\PucFactory')) {
+        $updateChecker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
+            'https://github.com/Pi-production/pi-cpf', // no trailing slash
+            __FILE__,
+            'pi-cpf'
+        );
+        $updateChecker->setBranch('main'); // Optional: specific branch
+        error_log('PUC loaded successfully');
+    } else {
+        error_log('PUC loaded but class not found!');
+    }
+} else {
+    error_log('PUC NOT loaded!');
+}
 
+// -----------------------
 // Include meta-box.php
+// -----------------------
 include plugin_dir_path(__FILE__) . 'meta-box.php';
 
+// -----------------------
+// Enqueue JS/CSS assets
+// -----------------------
 function pi_cpf_enqueue_assets() {
     $plugin_url = plugin_dir_url(__FILE__);
 
