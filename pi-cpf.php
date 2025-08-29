@@ -20,59 +20,28 @@ if (file_exists($update_checker_path)) {
     require_once $update_checker_path;
 
     if (class_exists('\YahnisElsts\PluginUpdateChecker\v5p6\PucFactory')) {
+
         // Instantiate PUC
         global $pi_cpf_update_checker;
         $pi_cpf_update_checker = \YahnisElsts\PluginUpdateChecker\v5p6\PucFactory::buildUpdateChecker(
-            'https://github.com/Pi-production/pi-cpf', // GitHub repo URL
+            'https://github.com/Pi-production/pi-cpf',
             __FILE__,
-            'pi-cpf' // Plugin slug
+            'pi-cpf'
         );
 
-        // Optional: use main branch for development updates
         $pi_cpf_update_checker->setBranch('main');
+        error_log('PUC loaded successfully');
 
-        // Force update check immediately
-        $pi_cpf_update_checker->checkForUpdates();
-        error_log('PUC forced to check updates.');
-
-        // Find the latest tag manually
-$latest_tag = null;
-foreach ($tags as $tag) {
-    $tag_name = $tag['name'];
-    if (!$latest_tag || version_compare($tag_name, $latest_tag, '>')) {
-        $latest_tag = $tag_name;
-        $latest_package = $tag['zipball_url']; // the ZIP file for PUC to install
-    }
-}
-
-// Force WordPress to recognize the update
-delete_site_transient('update_plugins');
-$transient = get_site_transient('update_plugins');
-if (!isset($transient->response)) {
-    $transient->response = [];
-}
-
-// Add plugin to update response
-$plugin_file = plugin_basename(__FILE__);
-$transient->response[$plugin_file] = (object) [
-    'slug'        => 'pi-cpf',
-    'new_version' => $latest_tag,
-    'url'         => 'https://github.com/Pi-production/pi-cpf',
-    'package'     => $latest_package,
-];
-
-set_site_transient('update_plugins', $transient);
-error_log("PUC transient manually updated: {$latest_tag}");
-
-        // Debug: log installed version, latest GitHub tag, and comparison
+        // All GitHub tag fetch & transient update in admin_init
         add_action('admin_init', function() {
             global $pi_cpf_update_checker;
 
             if (!$pi_cpf_update_checker) return;
 
             // Installed version
-            $installed_version = $pi_cpf_update_checker->getInstalledVersion();
-            error_log('PUC installed version: ' . $installed_version);
+            $plugin_data = get_file_data(__FILE__, ['Version' => 'Version'], 'plugin');
+            $installed_version = $plugin_data['Version'] ?? '0.0.0';
+            error_log('Installed plugin version: ' . $installed_version);
 
             // Fetch GitHub tags
             $tags_response = wp_remote_get('https://api.github.com/repos/Pi-production/pi-cpf/tags');
@@ -83,33 +52,45 @@ error_log("PUC transient manually updated: {$latest_tag}");
 
             $tags_body = wp_remote_retrieve_body($tags_response);
             $tags = json_decode($tags_body, true);
-            if (!$tags || !is_array($tags)) {
+            if (!is_array($tags) || empty($tags)) {
                 error_log('No tags found or invalid response.');
                 return;
             }
 
+            // Find latest tag
             $latest_tag = null;
+            $latest_package = '';
             foreach ($tags as $tag) {
                 $tag_name = $tag['name'];
-                error_log("GitHub tag found: {$tag_name}");
                 if (!$latest_tag || version_compare($tag_name, $latest_tag, '>')) {
                     $latest_tag = $tag_name;
+                    $latest_package = $tag['zipball_url'];
                 }
+                error_log("GitHub tag found: {$tag_name}");
             }
-
             error_log('GitHub latest tag: ' . $latest_tag);
 
             // Compare installed vs latest
-            $comparison = version_compare($latest_tag, $installed_version);
-            if ($comparison === 1) {
+            if (version_compare($latest_tag, $installed_version, '>')) {
                 error_log("Update available! Installed {$installed_version} < GitHub latest {$latest_tag}");
-            } elseif ($comparison === 0) {
-                error_log("Plugin is up to date. Installed {$installed_version} == GitHub latest {$latest_tag}");
             } else {
-                error_log("Installed version is newer than GitHub latest?! Installed {$installed_version} > GitHub latest {$latest_tag}");
+                error_log("Plugin is up to date. Installed {$installed_version} >= GitHub latest {$latest_tag}");
             }
 
-            error_log('Full tags array: ' . print_r($tags, true));
+            // Force WordPress to recognize the update
+            delete_site_transient('update_plugins');
+            $transient = get_site_transient('update_plugins');
+            if (!isset($transient->response)) $transient->response = [];
+
+            $plugin_file = plugin_basename(__FILE__);
+            $transient->response[$plugin_file] = (object) [
+                'slug'        => 'pi-cpf',
+                'new_version' => $latest_tag,
+                'url'         => 'https://github.com/Pi-production/pi-cpf',
+                'package'     => $latest_package,
+            ];
+            set_site_transient('update_plugins', $transient);
+            error_log("PUC transient manually updated: {$latest_tag}");
         });
 
     } else {
