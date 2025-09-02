@@ -13,8 +13,8 @@ require 'plugin-update-checker/plugin-update-checker.php';
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 $myUpdateChecker = PucFactory::buildUpdateChecker(
-	'https://github.com/Pi-production/pi-cpf/blob/main/plugin.json',
-	__FILE__, //Full path to the main plugin file or functions.php.
+	'https://github.com/Pi-production/pi-cpf',
+	__FILE__,
 	'pi-cpf'
 );
 
