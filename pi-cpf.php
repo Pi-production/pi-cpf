@@ -9,13 +9,13 @@ Author URI: https://pubinteractive.ca
 License: GPL2
 */
 
-require 'plugin-update-checker/plugin-update-checker.php';
+require 'path/to/plugin-update-checker/plugin-update-checker.php';
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 $myUpdateChecker = PucFactory::buildUpdateChecker(
-	'https://github.com/Pi-production/pi-cpf',
-	__FILE__,
-	'pi-cpf-main'
+	'https://github.com/Pi-production/pi-cpf/blob/main/plugin.json',
+	__FILE__, //Full path to the main plugin file or functions.php.
+	'pi-cpf'
 );
 
 //Set the branch that contains the stable release.

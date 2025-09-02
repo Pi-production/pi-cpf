@@ -1,8 +1,0 @@
-{
-    "name" : "Pi-cpf",
-    "version" : "1.0.8",
-    "download_url" : "https://github.com/Pi-production/pi-cpf/archive/refs/tags/1.0.8.zip",
-    "sections" : {
-        "description" : "Plugin description here. You can use HTML."
-    }
-}
