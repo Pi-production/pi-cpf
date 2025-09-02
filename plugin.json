@@ -1,7 +1,7 @@
 {
 	"name": "pi-cpf",
-	"version": "1.0.8",
-	"download_url": "https://github.com/Pi-production/pi-cpf/archive/refs/tags/1.0.8.zip",
+	"version": "1.0.9",
+	"download_url": "https://github.com/Pi-production/pi-cpf/archive/refs/tags/1.0.9.zip",
 
 	"homepage": "http://pubinteractive.ca/",
 	"requires": "4.5",
